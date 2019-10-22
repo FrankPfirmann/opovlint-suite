@@ -1,0 +1,13 @@
+#Project files
+OpenFOAM*/
+ThirdParty*/
+SU2/
+config/
+data/
+venv/
+.venv
+.idea/
+
+__pycache__/
+*.py[cod]
+*$py.class
