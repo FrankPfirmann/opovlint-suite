@@ -27,6 +27,6 @@ Prerequisites
 - C++ Compiler with C++11 support (GCC version >= 4.8)
 - Cmake (version >= 2.8)
 - Clang/LLVM 6.0
-- The executable created by opovlint is in the path
+- Generated find-type executable in a bin folder of an OO-Lint instance
 - All other prerequisites of possible analyzed projects (e.g. zlib for OpenFOAM-6)
 
