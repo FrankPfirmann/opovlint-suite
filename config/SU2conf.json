@@ -1,0 +1,21 @@
+{
+  "global" : {
+    "transform" : false,
+    "filter" : true,
+    "progress": false, 
+    "format": "%m@%f@%ls@%cs@%s@+%o@@",
+    "type" : "su2double",
+    "modules" : {
+    	"filter" : ["*"],
+    	"case" : false
+    }
+  },
+  "Printf" : {
+    "functions" : ["printf", "fprintf", "sprintf", "snprintf", "modf", "fmod"]
+  },
+  "LocalScope" : {
+    "namespace" : "Foam",
+    "keep_global" : false,
+    "functions" : ["round", "fabs", "abs", "min", "max", "exp", "exp2", "exp10", "log", "log10", "log2", "logb", "sqrt", "cbrt", "expm1", "log1p", "sin", "cos", "tan", "sincos", "asin", "acos", "atan", "sinh", "cosh", "tanh", "asinh", "acosh", "atanh", "erf", "erfc", "lgamma", "gamma", "j0", "j1", "y0", "y1", "yn", "jn", "pow", "hypot", "atan2", "min", "max"]
+  }
+}

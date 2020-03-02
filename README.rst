@@ -18,7 +18,8 @@ Currently supported Projects:
 .. _SU2: https://github.com/su2code/SU2
 .. _opovlint: https://github.com/ahueck/opovlint/tree/clang6.0
 
-To add a different project setup, implement the four different phases of setup described in project.py if necessary and create a Project object. Execution of opovlint is also possible for non-supported projects, which requires the compile_commands.json file in the root folder of the analyzed project. The result of the analysis is written into a csv file. For more information about options use "suite.py -h"
+To add a different project setup, implement the four different phases of setup described in project.py if necessary and create a Project object. Execution of opovlint is also possible for non-supported projects, which requires the compile_commands.json file in the root folder of the analyzed project.
+Use suite/core.py as script or imported function. Call "suite.py -h" for command line argument help
 
 -------------
 Prerequisites

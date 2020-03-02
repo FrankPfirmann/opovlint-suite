@@ -4,7 +4,7 @@ import json
 import datetime
 from operator import itemgetter
 
-
+#TODO:remove debug_i
 
 def extract_list(makeloc):
     targetlist = []
@@ -59,6 +59,8 @@ def write_csv(matchlist, columnlist, output="result", delim=";", sort=True):
         sortedlist = sorted(matchlist, key=itemgetter(0, 1, 2, 3))
     else:
         sortedlist = matchlist
+    if not os.path.isdir("data"):
+        os.mkdir("data")
     f = open("data/" + output + ".csv", "w")
     titlestring = ""
     for c in columnlist:

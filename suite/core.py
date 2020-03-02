@@ -8,10 +8,11 @@ from helpers import find_opovlint, write_csv, calc_diffs, extract_list, execute_
 
 
 def run():
+
     rootdir = os.path.dirname(os.path.dirname(__file__))
     parser = argparse.ArgumentParser()
     parser.add_argument("target", help="project to work with (e.g. OpenFOAM, SU2)")
-    parser.add_argument("-i", "--install", help="Install the project?", default=False)
+    parser.add_argument("-i", "--install", help="Install the project instead of running?", default=False)
     parser.add_argument("-c", "--gencommands", help="Generate compile commands?", default=False)
     parser.add_argument("--version", help="Project version appendix (e.g. 6 for OpenFOAM-6)", default="")
     parser.add_argument("-o", "--output", help="Name of output csv file", default="result")
@@ -47,7 +48,8 @@ def run():
         pr.environ(pName)
         if args.install:
             pr.preconfigure(args.version)
-        pr.comgen(pName)
+        if args.gencommands:
+            pr.comgen(pName)
     else:
         if args.db != "":
             conn = sqlite3.connect(args.db)

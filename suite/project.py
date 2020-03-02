@@ -22,14 +22,13 @@ def preconfigure_openfoam(version):
     os.chdir("ThirdParty-" + version)
     subprocess.call(["./Allwmake"])
     subprocess.call(["./makeParaView"])
-    #wmRefresh()
-    os.chdir("../../..")
+    input("Call wmRefresh in the ThirdParty folder and then press enter")
+    os.chdir("..")
 
 
 def comgen_openfoam(name):
     os.chdir(name)
     subprocess.call("wmake/wcleanPlatform")
-    os.chdir("")
     f = open('Allwmake', "r").readlines()
     for i in range(0, len(f)):
         if "wmake $targetType OpenFOAM" in f[i]:
@@ -38,9 +37,9 @@ def comgen_openfoam(name):
     with open('Allwmake', "w") as file:
         file.writelines(f)
     subprocess.call(["./Allwmake", "-j" + str(multiprocessing.cpu_count())])
-    os.chdir("../../..")
+    os.chdir("..")
     os.rename(os.getcwd() + '/src/compile_commands.json', os.getcwd() + '/compile_commands.json')
-    os.chdir("../../..")
+    os.chdir("..")
 
 
 def setup_su2(version):
@@ -54,16 +53,16 @@ def environ_su2(name):
 
 
 def preconfigure_su2(version):
-    os.chdir("../../SU2")
+    os.chdir("SU2")
     subprocess.call("./bootstrap")
     subprocess.call("./configure")
-    os.chdir("../../..")
+    os.chdir("..")
 
 
 def comgen_su2(name):
     os.chdir(name)
     subprocess.call(["bear make"], shell=True)
-    os.chdir("../../..")
+    os.chdir("..")
 
 
 def idle():
