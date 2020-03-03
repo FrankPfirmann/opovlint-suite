@@ -79,14 +79,14 @@ def write_csv(matchlist, columnlist, output="result", delim=";", sort=True):
     f.close
 
 
-def replace_with(fi, x, y):
+def replace_with(fi, ou, x, y):
     lines = []
     f = open(fi, "r")
     for line in f:
         line = line.replace(x, y)
         lines.append(line)
     f.close()
-    with open(fi, "w") as f:
+    with open(ou, "w") as f:
         for line in lines:
             f.write(line)
     f.close()

@@ -4,7 +4,7 @@ import sqlite3
 
 import project
 from helpers import find_opovlint, write_csv, calc_diffs, extract_list, execute_find_type, add_run_to_db, \
-    add_matches_to_db
+    add_matches_to_db, replace_with
 
 
 def run():
@@ -13,7 +13,7 @@ def run():
     parser = argparse.ArgumentParser()
     parser.add_argument("target", help="project to work with (e.g. OpenFOAM, SU2)")
     parser.add_argument("-i", "--install", help="Install the project instead of running?", default=False)
-    parser.add_argument("-c", "--gencommands", help="Generate compile commands?", default=False)
+    parser.add_argument("-c", "--gencommands", help="Generate compile commands manually?", default=False)
     parser.add_argument("--version", help="Project version appendix (e.g. 6 for OpenFOAM-6)", default="")
     parser.add_argument("-o", "--output", help="Name of output csv file", default="result")
     parser.add_argument("-d", "--csvdelimiter", help="Delimiter for csv output", default=";")
@@ -51,6 +51,11 @@ def run():
         if args.gencommands:
             pr.comgen(pName)
     else:
+        if not os.path.exists(pName + "/compile_commands.json"):
+            if not os.path.exists("compile_commands/" + pName + ".json"):
+                print("No pre-generated compile command database available, generate manually with --gencommands")
+            else:
+                replace_with("compile_commands/" + pName + ".json", pName + "/compile_commands.json", "[root]", os.getcwd())
         if args.db != "":
             conn = sqlite3.connect(args.db)
             cur = conn.cursor()
@@ -69,23 +74,24 @@ def run():
             if len(args.diff) == 2:
                 write_csv(calc_diffs(args.diff[0], args.diff[1], cur), diffs_columns, output=args.output, sort=False)
                 exit()
-        targetList = extract_list(pName)
-        confPath = os.path.join(rootdir, "config/" + config)
-        if os.path.isdir(confPath):
+        target_list = extract_list(pName)
+        conf_path = os.path.join(rootdir, "config/" + config)
+        #support multiple configs
+        if os.path.isdir(conf_path):
             accList = []
-            for conf in os.listdir(confPath):
+            for conf in os.listdir(conf_path):
                 if args.db != "":
-                    accList = execute_find_type(targetList, pName, args.oolint, delim=args.csvdelimiter, config=confPath + "/" + conf)
-                    add_run_to_db(cur, args.target, args.version, args.oolint, config=confPath + "/" + conf)
+                    accList = execute_find_type(target_list, pName, args.oolint, delim=args.csvdelimiter, config=conf_path + "/" + conf)
+                    add_run_to_db(cur, args.target, args.version, args.oolint, config=conf_path + "/" + conf)
                     add_matches_to_db(cur, accList, args.csvdelimiter)
                 else:
-                    accList += execute_find_type(targetList, pName, args.oolint, delim=args.csvdelimiter, config=confPath + "/" + conf)
+                    accList += execute_find_type(target_list, pName, args.oolint, delim=args.csvdelimiter, config=conf_path + "/" + conf)
                     write_csv(accList, simple_columns, output=args.output, delim=args.csvdelimiter)
 
         else:
-            tList = execute_find_type(targetList, pName, args.oolint, delim=args.csvdelimiter, config=confPath)
+            tList = execute_find_type(target_list, pName, args.oolint, delim=args.csvdelimiter, config=conf_path)
             if args.db != "":
-                add_run_to_db(cur, args.target, args.version, args.oolint, config=confPath)
+                add_run_to_db(cur, args.target, args.version, args.oolint, config=conf_path)
                 add_matches_to_db(cur, tList, args.csvdelimiter)
 
             else:
