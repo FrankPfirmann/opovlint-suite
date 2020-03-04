@@ -22,13 +22,13 @@ def preconfigure_openfoam(version):
     os.chdir("ThirdParty-" + version)
     subprocess.call(["./Allwmake"])
     subprocess.call(["./makeParaView"])
-    input("Call wmRefresh in the ThirdParty folder and then press enter")
     os.chdir("..")
 
 
 def comgen_openfoam(name):
     os.chdir(name)
     subprocess.call("wmake/wcleanPlatform")
+    os.chdir("src")
     f = open('Allwmake', "r").readlines()
     for i in range(0, len(f)):
         if "wmake $targetType OpenFOAM" in f[i]:
@@ -43,7 +43,7 @@ def comgen_openfoam(name):
 
 
 def setup_su2(version):
-    subprocess.call(["git", "clone", "https://github.com/su2code/SU2.git"])
+    subprocess.call(["git", "clone", "--branch", "v" + version, "https://github.com/su2code/SU2.git",  "SU2-" + version])
 
 
 def environ_su2(name):
@@ -53,7 +53,7 @@ def environ_su2(name):
 
 
 def preconfigure_su2(version):
-    os.chdir("SU2")
+    os.chdir("SU2-" + version)
     subprocess.call("./bootstrap")
     subprocess.call("./configure")
     os.chdir("..")
