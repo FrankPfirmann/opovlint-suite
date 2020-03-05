@@ -11,8 +11,8 @@ def run():
     rootdir = os.path.dirname(os.path.dirname(__file__))
     parser = argparse.ArgumentParser()
     parser.add_argument("target", help="project to work with (e.g. OpenFOAM, SU2)")
-    parser.add_argument("-i", "--install", help="Install the project instead of running?", default=False)
-    parser.add_argument("-c", "--gencommands", help="Generate compile commands manually?", default=False)
+    parser.add_argument("-i", "--install", help="Install the project instead of running?", dest='install', default=False, action="store_true")
+    parser.add_argument("-c", "--gencommands", help="Generate compile commands manually?", dest='gencommands', default=False, action="store_true")
     parser.add_argument("--version", help="Project version appendix (e.g. 6 for OpenFOAM-6, releases for SU2 7.0.0)", default="")
     parser.add_argument("-o", "--output", help="Name of output csv file", default="")
     parser.add_argument("-d", "--csvdelimiter", help="Delimiter for csv output", default=";")
@@ -35,7 +35,6 @@ def run():
         config = args.config
 
     simple_columns = ["MatchType", "File", "Line", "Column", "Code", "Files"]
-    diffs_columns = ["runid", "matchid", "MatchType", "File", "Line", "Column", "Code", "correct_match"]
     pName = args.target
     if args.version != "":
         pName = pName + "-" + args.version
@@ -56,9 +55,6 @@ def run():
                 replace_with("compile_commands/" + pName + ".json", pName + "/compile_commands.json", "[root]", os.getcwd())
         if args.db != "":
             db = Database(args.db)
-            if len(args.diff) == 2:
-                write_csv(db.calc_diffs(args.diff[0], args.diff[1]), diffs_columns, output=args.output, sort=False)
-                exit()
         target_list = extract_list(pName)
         conf_path = os.path.join(rootdir, "config/" + config)
         #support multiple configs

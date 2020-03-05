@@ -5,6 +5,16 @@ import sqlite3
 import subprocess
 
 
+def filter_regressed(idn, ido, dbt):
+    retlist = []
+    for diff in dbt:
+        if diff[0] == idn and diff[8] == 0:
+            retlist.append(diff)
+        if diff[0] == ido and diff[8] == 1:
+            retlist.append(diff)
+    return retlist
+
+
 class Database:
     def __init__(self, path):
         #save connector to close
@@ -68,39 +78,69 @@ class Database:
 
             self.cur.execute('INSERT INTO match_entries (runid, matchid) VALUES(?, ?)', (runid, currentmatchid))
 
-    def calc_diffs(self, run1, run2):
-        self.cur.execute('SELECT * FROM match_entries JOIN matches ON matches.ID = match_entries.matchid \
-        WHERE match_entries.runid=? OR match_entries.runid=? GROUP BY match_entries.matchid HAVING COUNT(*) = 1\
-                    ORDER BY matches.file, match_entries.runid', (run1, run2))
-        return self.cur.fetchall()
+    def calc_diffs(self, run1, run2, module_list):
+        difflist = []
+        if not module_list:
+            self.cur.execute('SELECT * FROM match_entries JOIN matches ON matches.ID = match_entries.matchid \
+                    WHERE match_entries.runid=? OR match_entries.runid=? GROUP BY match_entries.matchid HAVING COUNT(*) = 1\
+                                ORDER BY matches.file, match_entries.runid', (run1, run2))
+            difflist = self.cur.fetchall()
+        else:
+            for m in module_list:
+                self.cur.execute('SELECT * FROM match_entries JOIN matches ON matches.ID = match_entries.matchid \
+                WHERE (match_entries.runid=? OR match_entries.runid=?) AND matches.matchtype=? GROUP BY match_entries.matchid HAVING COUNT(*) = 1\
+                            ORDER BY matches.file, match_entries.runid', (run1, run2, m))
+                difflist += self.cur.fetchall()
+        return difflist
 
-    def regressed_matches(self, idn, ido):
-        dbt = self.calc_diffs(idn, ido)
-        print(dbt)
-        retlist = []
-        for diff in dbt:
-            if diff[0] == idn and diff[8] == 0:
-                retlist.append(diff)
-            if diff[0] == ido and diff[8] == 1:
-                retlist.append(diff)
-        return retlist
+    def regressed_matches(self, idn, ido, module_list):
+        dbt = self.calc_diffs(idn, ido, module_list)
+        return filter_regressed(idn, ido, dbt)
 
-    def true_positives(self, id):
-        self.cur.execute('SELECT matchtype, file, line, _column, code FROM match_entries JOIN matches ON matches.ID = match_entries.matchid WHERE match_entries.runid=? AND matches.is_correct=1', (id,))
-        return self.cur.fetchall()
+    def true_positives(self, id, module_list=[]):
+        res = []
+        if not module_list:
+            self.cur.execute('SELECT matchtype, file, line, _column, code FROM match_entries JOIN matches ON matches.ID = match_entries.matchid WHERE match_entries.runid=? AND matches.is_correct=1', (id,))
+            res = self.cur.fetchall()
+        else:
+            for m in module_list:
+                self.cur.execute(
+                    'SELECT matchtype, file, line, _column, code FROM match_entries JOIN matches ON matches.ID = match_entries.matchid WHERE match_entries.runid=? AND matches.is_correct=1 AND matches.matchtype=?',
+                    (id, m))
+                res += self.cur.fetchall()
+        return res
 
-    def false_positives(self, id):
-        self.cur.execute(
-            'SELECT matchtype, file, line, _column, code FROM match_entries JOIN matches ON matches.ID = match_entries.matchid WHERE match_entries.runid=? AND matches.is_correct=0 ',
-            (id,))
-        return self.cur.fetchall()
+    def false_positives(self, id, module_list=[]):
+        res = []
+        if not module_list:
+            self.cur.execute(
+                'SELECT matchtype, file, line, _column, code FROM match_entries JOIN matches ON matches.ID = match_entries.matchid WHERE match_entries.runid=? AND matches.is_correct=0',
+                (id,))
+            res = self.cur.fetchall()
+        else:
+            for m in module_list:
+                self.cur.execute(
+                    'SELECT matchtype, file, line, _column, code FROM match_entries JOIN matches ON matches.ID = match_entries.matchid WHERE match_entries.runid=? AND matches.is_correct=0 AND matches.matchtype=?',
+                    (id, m))
+                res += self.cur.fetchall()
+        return res
 
-    def false_negatives(self, id):
+    def false_negatives(self, id, module_list=[]):
         self.cur.execute('SELECT type, project, project_version FROM runs WHERE runs.ID=?', (id,))
         target_type, project, version = self.cur.fetchall()[0]
-        self.cur.execute('SELECT runs.id, matchtype, file, line, _column, code FROM (runs JOIN match_entries ON runs.ID = match_entries.runid) JOIN matches ON match_entries.matchid = matches.id WHERE matches.is_correct=1\
-                         AND (runs.type = ? AND runs.project = ? AND runs.project_version = ?)', (target_type, project, version))
-        total = self.cur.fetchall()
+        total = []
+        if not module_list:
+            self.cur.execute('SELECT runs.id, matchtype, file, line, _column, code FROM (runs JOIN match_entries ON runs.ID = match_entries.runid)\
+                             JOIN matches ON match_entries.matchid = matches.id WHERE matches.is_correct=1\
+                             AND (runs.type = ? AND runs.project = ? AND runs.project_version = ?)', (target_type, project, version))
+            total = self.cur.fetchall()
+        else:
+            for m in module_list:
+                self.cur.execute('SELECT runs.id, matchtype, file, line, _column, code FROM (runs JOIN match_entries ON runs.ID = match_entries.runid)\
+                                JOIN matches ON match_entries.matchid = matches.id WHERE matches.is_correct=1\
+                                AND (runs.type = ? AND runs.project = ? AND runs.project_version = ? AND matches.matchtype=?)'\
+                                , (target_type, project, version, m))
+                total += self.cur.fetchall()
         #remove all matches, which are also matched in the given run
         rmlist = []
         for m in total:
@@ -112,35 +152,42 @@ class Database:
         #then collapse duplicates
         return list(set([m[1:6] for m in total if m not in rmlist]))
 
-    def regressed_matches_for_project(self, target_type, project, project_version):
+    def regressed_matches_for_project(self, target_type, project, project_version, module_list=[]):
         self.cur.execute('SELECT MAX(date), runs.ID FROM runs WHERE runs.type = ? AND runs.project = ? AND runs.project_version = ?', (target_type, project, project_version))
         idn = self.cur.fetchall()[0][1]
         self.cur.execute('SELECT MAX(date), runs.ID FROM runs WHERE date <(SELECT MAX(date) FROM runs WHERE runs.type = ? AND runs.project = ? AND runs.project_version = ?)', (target_type, project, project_version))
         ido = self.cur.fetchall()[0][1]
-        print((idn,ido))
-        return self.regressed_matches(idn, ido)
+        return self.regressed_matches(idn, ido, module_list)
 
     def calc_latest_diff(self):
         self.cur.execute('SELECT MAX(date), runs.ID FROM runs')
         idn = self.cur.fetchall()[0][1]
-        self.cur.execute('SELECT MAX(date), runs.ID FROM runs WHERE date <(SELECT MAX(date) FROM runs)')
+        self.cur.execute('SELECT MAX(date), runs.ID FROM runs WHERE date < (SELECT MAX(date) FROM runs)')
         ido = self.cur.fetchall()[0][1]
         return self.calc_diffs(idn, ido)
 
 
-#class to avoid redundant database operations
+#class with matching class fields to avoid redundant database operations
 class DatabaseMeasure:
-    def __init__(self, db, id):
-        self.tp = len(db.true_positives(id))
-        self.fp = len(db.false_positives(id))
-        self.fn = len(db.false_negatives(id))
+    def __init__(self, db, id, module_list=[]):
+        self.tp = len(db.true_positives(id, module_list))
+        self.fp = len(db.false_positives(id, module_list))
+        self.fn = len(db.false_negatives(id, module_list))
 
     def precision(self):
-        return self.tp/(self.tp + self.fp)
+        try:
+            return self.tp/(self.tp + self.fp)
+        except ZeroDivisionError:
+            return 0
 
     def recall(self):
-        return self.tp/(self.tp + self.fn)
+        try:
+            return self.tp / (self.tp + self.fn)
+        except ZeroDivisionError:
+            return 0
 
     def f1score(self):
-        return 2*self.precision()*self.recall()/(self.precision() + self.recall())
-
+        try:
+            return 2*self.precision()*self.recall()/(self.precision() + self.recall())
+        except ZeroDivisionError:
+            return 0
