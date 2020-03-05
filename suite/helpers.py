@@ -4,19 +4,12 @@ import json
 import datetime
 from operator import itemgetter
 
-#TODO:remove debug_i
 
 def extract_list(makeloc):
     targetlist = []
     with open(makeloc + "/compile_commands.json") as cjson:
         data = json.load(cjson)
-        debug_i = 0
         for p in data:
-
-            debug_i += 1
-            if debug_i > 10:
-                break
-
             targetlist.append(p['file'])
     return targetlist
 
