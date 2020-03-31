@@ -64,7 +64,7 @@ def run():
                 accList += execute_find_type(target_list, pName, args.oolint, delim=args.csvdelimiter,
                                             config=conf_path + "/" + conf)
             if args.db != "":
-                db.add_run_to(args.target, args.version, args.oolint, config=conf_path + "/" + conf)
+                db.add_run(args.target, args.version, args.oolint, config=conf_path + "/" + conf)
                 db.add_matches(accList, args.csvdelimiter)
             if args.output != "":
                  write_csv(accList, simple_columns, output=args.output, delim=args.csvdelimiter)

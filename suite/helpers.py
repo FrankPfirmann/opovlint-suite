@@ -30,8 +30,12 @@ def find_opovlint():
 def execute_find_type(tlist, pname, oolint, delim=";", linedelim="@", config="conf.json"):
     matchlist = []
     find_type = oolint + "/bin/find-type"
+    i = 0
     for target in tlist:
+        if i > 10:
+            return matchlist
         t = subprocess.check_output([find_type, target.rstrip(), "-config=" + config]).decode("utf-8").rstrip()
+        i += 1
         for m in t.split(linedelim):
             m = m.replace('\n', '')
             m = m.replace(os.getcwd() + '/' + pname, '')

@@ -1,7 +1,7 @@
 #Project files
 OpenFOAM*/
 ThirdParty*/
-SU2/
+SU2*/
 data/
 venv/
 .venv

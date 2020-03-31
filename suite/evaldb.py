@@ -15,6 +15,7 @@ parser.add_argument("-d", "--csvdelimiter", help="Delimiter for csv output", def
 parser.add_argument("--db", help="Database to interact with", default="")
 parser.add_argument("--diff", help="Differences of runs to show(list of 2 ids)", type=int, nargs=2, default=[])
 parser.add_argument("--reg", help="only show regressed matches in diff(new false positives, new false negatives)", dest='reg', default=False, action="store_true")
+parser.add_argument("--tag", help="Tag this match as a correct", type=int, default=0)
 parser.add_argument("--modules", help="Only test these modules", type=str, default=[])
 args = parser.parse_args()
 
@@ -23,7 +24,9 @@ diffs_columns = ["runid", "matchid", "MatchType", "File", "Line", "Column", "Cod
 
 
 def run():
-    if len(args.diff) == 2:
+    if args.tag != 0:
+        db.edit_tag(args.tag, 1)
+    elif len(args.diff) == 2:
         if args.reg:
             out = db.regressed_matches(args.diff[0], args.diff[1], args.modules)
             print(out)
@@ -41,6 +44,7 @@ def run():
         print("F1score for run " + str(args.measures) + ": " + str(dbm.f1score()))
     else:
         write_csv(db.calc_latest_diff(), diffs_columns, output=args.output, sort=False, delim=args.csvdelimiter)
+    db.close()
 
 
 if __name__ == "__main__":

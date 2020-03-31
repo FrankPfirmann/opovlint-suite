@@ -4,7 +4,6 @@ import os
 import sqlite3
 import subprocess
 
-
 def filter_regressed(idn, ido, dbt):
     retlist = []
     for diff in dbt:
@@ -44,10 +43,15 @@ class Database:
             os.chdir(oolint)
             oolint_version = subprocess.check_output(["git", "describe", "--tags", "--always"]).decode("utf-8").rstrip()
             os.chdir(cwd)
+            types = ''
+            for type in data['global']['type']:
+                types += type
+                types += ' '
+            print(types)
             self.cur.execute(
                 'INSERT INTO runs (date, type, project, project_version, opov_version)\
                  VALUES (?, ?, ?, ?, ?)',
-                (datetime.datetime.utcnow().isoformat(), data['global']['type'], target,
+                (datetime.datetime.utcnow().isoformat(), types, target,
                  version, oolint_version))
 
     def add_matches(self, matchlist, delim):
@@ -81,13 +85,13 @@ class Database:
     def calc_diffs(self, run1, run2, module_list):
         difflist = []
         if not module_list:
-            self.cur.execute('SELECT * FROM match_entries JOIN matches ON matches.ID = match_entries.matchid \
+            self.cur.execute('SELECT runid, matchid, matchtype, file, line, _column, code, is_correct FROM match_entries JOIN matches ON matches.ID = match_entries.matchid \
                     WHERE match_entries.runid=? OR match_entries.runid=? GROUP BY match_entries.matchid HAVING COUNT(*) = 1\
                                 ORDER BY matches.file, match_entries.runid', (run1, run2))
             difflist = self.cur.fetchall()
         else:
             for m in module_list:
-                self.cur.execute('SELECT * FROM match_entries JOIN matches ON matches.ID = match_entries.matchid \
+                self.cur.execute('SELECT runid, matchid, matchtype, file, line, _column, code, is_correct FROM match_entries JOIN matches ON matches.ID = match_entries.matchid \
                 WHERE (match_entries.runid=? OR match_entries.runid=?) AND matches.matchtype=? GROUP BY match_entries.matchid HAVING COUNT(*) = 1\
                             ORDER BY matches.file, match_entries.runid', (run1, run2, m))
                 difflist += self.cur.fetchall()
@@ -166,6 +170,8 @@ class Database:
         ido = self.cur.fetchall()[0][1]
         return self.calc_diffs(idn, ido)
 
+    def edit_tag(self, id, bool):
+        self.cur.execute('UPDATE matches SET is_correct = ? WHERE ID = ?', (bool, id))
 
 #class with matching class fields to avoid redundant database operations
 class DatabaseMeasure:

@@ -19,8 +19,10 @@ Currently supported Projects:
 .. _opovlint: https://github.com/ahueck/opovlint/tree/clang6.0
 
 To add a different project setup, implement the four different phases of setup described in project.py if necessary and create a Project object. Execution of opovlint is also possible for non-supported projects, which requires the compile_commands.json file in the root folder of the analyzed project.
-Use suite/core.py as script or imported function. Call "suite.py -h" for command line argument help
-
+Use suite/core.py (as a script or as a imported function) to install projects and do project executions
+Use suite/evaldb.py to do comparisons and evaluations of executions in a database
+Command line option "-h" for both scripts as
+Multiple active types cause matches to not be clearly associatable to a matchtype
 -------------
 Prerequisites
 -------------

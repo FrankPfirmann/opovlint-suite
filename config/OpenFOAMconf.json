@@ -4,8 +4,7 @@
     "filter" : true,
     "progress": false, 
     "format": "%m;%f;%ls;%cs;%s;%o@",
-    "type" : "Foam::scalar",
-    "tolerated_type" : "Foam::doubleScalar",
+    "type" : ["Foam::scalar", "Foam::doubleScalar"],
     "modules" : {
     	"filter" : ["Assign"],
     	"case" : false
